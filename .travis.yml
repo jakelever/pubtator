@@ -1,6 +1,12 @@
 
+language: python
 
+install:
+  - pip install pubrunner
+  - sh install_gnormplus_java.sh
+  - sh install_tmchem_model1_java.sh
+  - sh install_tmvar.sh 
 script:
-  - sh install_tmvar.sh
+  - pubrunner --defaultsettings --test .
 
 
