@@ -1,8 +1,13 @@
 
-language: java
+language: python
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y default-jdk ant
+  - pip install pubrunner
 
 install:
-  - pip install pubrunner
+
   - sh install_gnormplus_java.sh
   - sh install_tmchem_model1_java.sh
   - sh install_tmvar.sh 
