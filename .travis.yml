@@ -1,5 +1,5 @@
 
-language: python
+language: java
 
 install:
   - pip install pubrunner
