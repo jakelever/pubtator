@@ -27,7 +27,7 @@ run:
     - python fixBioc.py --inBiocXML {IN:PUBMED/%} --outBiocXML {OUT:fixed/%.xml}
     - python fixBioc.py --inBiocXML {IN:PMCOA/%} --outBiocXML {OUT:fixed/%.xml}
     - python fixBioc.py --inBiocXML {IN:PMCAMC/%} --outBiocXML {OUT:fixed/%.xml}
-    - python runTool2.py --tool GNormPlus --inBioc {IN:fixed/%} --outBioc {OUT:GNormPlus/%} --mem 12 --maxLength 100000
-    - python runTool2.py --tool tmChem --inBioc {IN:fixed/%} --outBioc {OUT:tmChem/%} --mem 12 --maxLength 100000
-    - python runTool2.py --tool tmVar --inBioc {IN:fixed/%} --outBioc {OUT:tmVar/%} --mem 3 --maxLength 100000
+    - python runTool.py --tool GNormPlus --inBioc {IN:fixed/%} --outBioc {OUT:GNormPlus/%} --mem 12 --maxLength 100000
+    - python runTool.py --tool tmChem --inBioc {IN:fixed/%} --outBioc {OUT:tmChem/%} --mem 12 --maxLength 100000
+    - python runTool.py --tool tmVar --inBioc {IN:fixed/%} --outBioc {OUT:tmVar/%} --mem 3 --maxLength 100000
 
