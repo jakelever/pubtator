@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
 	tool = args.tool.lower()
 
-	assert tool in ['gnormplus','tmchem','tmvar'], "--tool must be GNormPlus, tmChem or tmVar"
+	assert tool in ['dnorm','gnormplus','tmchem','tmvar'], "--tool must be DNorm, GNormPlus, tmChem or tmVar"
 
 	inBioc = os.path.abspath(args.inBioc)
 	outBioc = os.path.abspath(args.outBioc)
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
 	here = os.path.abspath(os.path.dirname(__file__))
 
-	toolDirs = {'gnormplus':'GNormPlusJava','tmchem':'tmChemM1-0.0.2','tmvar':'tmVarJava'}
+	toolDirs = {'dnorm':'DNorm-0.0.7','gnormplus':'GNormPlusJava','tmchem':'tmChemM1-0.0.2','tmvar':'tmVarJava'}
 	#jarFiles = {'gnormplus':'GNormPlus.jar','tmvar':'tmVar.jar'}
 
 	toolDir = os.path.join(here,toolDirs[tool])
@@ -138,6 +138,10 @@ if __name__ == '__main__':
 
 			#shutil.copyfile(inBioc, inFile)
 
+		if tool == 'dnorm':
+			ab3pDir = os.path.join(here,'Ab3P-v1.5')
+
+			command = ['sh', 'ApplyDNorm_BioC.sh','config/banner_NCBIDisease_UMLS2013AA_TEST.xml','data/CTD_diseases.tsv','output/simmatrix_NCBIDisease_e4.bin',ab3pDir, os.path.join(workingDir,'tmp'),inputDir,outputDir]
 		if tool == 'gnormplus':
 			jarFile = os.path.join(toolDir,'GNormPlus.jar')
 			setupFile = os.path.join(toolDir,'setup.txt')
