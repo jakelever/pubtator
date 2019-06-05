@@ -9,15 +9,20 @@ import subprocess
 import bioc
 
 class TempDir:
-	def __init__(self):
-		pass
+	def __init__(self,keepIntermediateFiles=False):
+		self.keepIntermediateFiles = keepIntermediateFiles
 
 	def __enter__(self):
+		#self.tempDir = os.path.abspath('temp')
+		#if os.path.isdir(self.tempDir):
+		#	shutil.rmtree(self.tempDir)
+		#os.makedirs(self.tempDir)
 		self.tempDir = tempfile.mkdtemp()
 		return self.tempDir
 
 	def __exit__(self, type, value, traceback):
-		shutil.rmtree(self.tempDir)
+		if not self.keepIntermediateFiles:
+			shutil.rmtree(self.tempDir)
 		#pass
 
 def randomBiocFilename():
@@ -26,7 +31,7 @@ def randomBiocFilename():
 	randomstring = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
 	return "%s-%d-%s.bioc.xml" % (hostname,processid,randomstring)
 
-def splitBiocAndStripAnnotations(inBioc,outDir,maxLength):
+def splitBioc(inBioc,outDir,maxLength,stripAnnotations=False):
 	assert os.path.isfile(inBioc)
 	assert os.path.isdir(outDir)
 
@@ -47,11 +52,12 @@ def splitBiocAndStripAnnotations(inBioc,outDir,maxLength):
 
 			assert len(doc.passages) > 0 and thisDocLength > 0, "Corpus file cannot contain empty documents"
 
-			for passage in doc.passages:
-				passage.annotations = []
-				passage.relations = []
+			if stripAnnotations:
+				for passage in doc.passages:
+					passage.annotations = []
+					passage.relations = []
 
-			if maxLength and (textLength + thisDocLength) > maxLength:
+			if textLength > 0 and maxLength and (textLength + thisDocLength) > maxLength:
 				textLength = 0
 				docNumber += 1
 				docName = os.path.join(outDir,"%08d.bioc.xml" % docNumber)
@@ -76,7 +82,7 @@ def symlinkDirectoryContents(fromDir,toDir,skipTmp=False):
 
 
 def mergeBioc(inDir,outBioc):
-	inBiocs = sorted( [ os.path.join(inDir,filename) for filename in os.listdir(inDir) if filename.lower().endswith('.xml') ] )
+	inBiocs = sorted( [ os.path.join(inDir,filename) for filename in os.listdir(inDir) if filename.lower().endswith('.xml') and not filename.lower().endswith('.ga.xml') ] )
 
 	with bioc.iterwrite(outBioc) as writer:
 		for inBioc in inBiocs:
@@ -91,11 +97,14 @@ if __name__ == '__main__':
 	parser.add_argument('--outBioc',required=True,type=str,help='Output BioC XML file')
 	parser.add_argument('--mem',type=int,default=10,help='GB of RAM to use for Java')
 	parser.add_argument('--maxLength',type=int,default=1000000,help='Max size (in characters) of documents to put in a single file for processing')
+	parser.add_argument('--keepFiles', action='store_true',help='Whether to keep the temporary files')
 	args = parser.parse_args()
 
 	tool = args.tool.lower()
 
-	assert tool in ['dnorm','gnormplus','tmchem','tmvar'], "--tool must be DNorm, GNormPlus, tmChem or tmVar"
+	acceptedTools = ['dnorm','gnormplus_java','gnormplus_perl','tmchem','tmvar']
+
+	assert tool in acceptedTools, "--tool must be %s" % str(acceptedTools)
 
 	inBioc = os.path.abspath(args.inBioc)
 	outBioc = os.path.abspath(args.outBioc)
@@ -104,7 +113,7 @@ if __name__ == '__main__':
 
 	here = os.path.abspath(os.path.dirname(__file__))
 
-	toolDirs = {'dnorm':'DNorm-0.0.7','gnormplus':'GNormPlusJava','tmchem':'tmChemM1-0.0.2','tmvar':'tmVarJava'}
+	toolDirs = {'dnorm':'DNorm-0.0.7','gnormplus_java':'GNormPlusJava','gnormplus_perl':'GNormPlus','tmchem':'tmChemM1-0.0.2','tmvar':'tmVarJava'}
 	#jarFiles = {'gnormplus':'GNormPlus.jar','tmvar':'tmVar.jar'}
 
 	toolDir = os.path.join(here,toolDirs[tool])
@@ -112,7 +121,7 @@ if __name__ == '__main__':
 
 
 
-	with TempDir() as tempDir:
+	with TempDir(args.keepFiles) as tempDir:
 
 		#if tool == 'gnormplus' or tool == 'tmvar':
 		inputDir = os.path.join(tempDir,'input')
@@ -125,7 +134,7 @@ if __name__ == '__main__':
 		os.mkdir(outputDir)
 		os.mkdir(workingDir)
 
-		splitBiocAndStripAnnotations(inBioc,inputDir,args.maxLength)
+		splitBioc(inBioc,inputDir,args.maxLength,stripAnnotations=False)
 
 		symlinkDirectoryContents(toolDir,workingDir,skipTmp=True)
 		os.mkdir(os.path.join(workingDir,'tmp'))
@@ -142,10 +151,15 @@ if __name__ == '__main__':
 			ab3pDir = os.path.join(here,'Ab3P-v1.5')
 
 			command = ['sh', 'ApplyDNorm_BioC.sh','config/banner_NCBIDisease_UMLS2013AA_TEST.xml','data/CTD_diseases.tsv','output/simmatrix_NCBIDisease_e4.bin',ab3pDir, os.path.join(workingDir,'tmp'),inputDir,outputDir]
-		if tool == 'gnormplus':
+		elif tool == 'gnormplus_java':
 			jarFile = os.path.join(toolDir,'GNormPlus.jar')
 			setupFile = os.path.join(toolDir,'setup.txt')
 			command = ['java','-Xmx%dG' % args.mem ,'-Xms%dG' % args.mem,'-jar',jarFile,inputDir, outputDir,setupFile]
+		elif tool == 'gnormplus_perl':
+			biocPerlLib = os.path.join(here,'Ext','Perl')
+			os.environ['PERL5LIB'] = '.:%s' % biocPerlLib
+			setupFile = os.path.join(toolDir,'setup.txt')
+			command = ['perl','GNormPlus.pl','-i',inputDir,'-o',outputDir,'-s','setup.txt']
 		elif tool == 'tmchem':
 			ab3pDir = os.path.join(here,'Ab3P-v1.5')
 			command = ['sh', 'Run.sh','config/banner_JOINT.xml','data/dict.txt',ab3pDir,os.path.join(workingDir,'tmp'),inputDir,outputDir,str(args.mem)]
@@ -158,6 +172,13 @@ if __name__ == '__main__':
 		retval = subprocess.call(command)
 
 		assert retval == 0, 'Command exited with error (%s)' % str(command)
+
+		# Remove unneeded files
+		if tool == 'gnormplus_perl':
+			for f in os.listdir(outputDir):
+				if f.endswith('ga.xml'):
+					pass
+					#os.remove(os.path.join(outputDir,f))
 
 		mergeBioc(outputDir,outBioc)
 
