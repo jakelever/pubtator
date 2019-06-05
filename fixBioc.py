@@ -18,13 +18,19 @@ if __name__ == '__main__':
 			pmids.add(doc.infons['pmid'])
 
 			for passage in doc.passages:
-				passage.infons['type'] = passage.infons['section']
+				if 'section' in passage.infons:
+					passage.infons['type'] = passage.infons['section']
+				else:
+					passage.infons['type'] = 'unknown'
+
 				passage.text = passage.text.strip()
 
 			thisDocLength = sum( len(passage.text) for passage in doc.passages )
 
 			if len(doc.passages) == 0 or thisDocLength == 0:
 				continue
+
+			textLength += thisDocLength
 			
 			writer.writedocument(doc)
 
