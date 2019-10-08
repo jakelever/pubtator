@@ -9,19 +9,21 @@ import subprocess
 import bioc
 
 class TempDir:
-	def __init__(self,keepIntermediateFiles=False):
-		self.keepIntermediateFiles = keepIntermediateFiles
+	def __init__(self,debug=False):
+		self.debug = debug
 
 	def __enter__(self):
-		#self.tempDir = os.path.abspath('temp')
-		#if os.path.isdir(self.tempDir):
-		#	shutil.rmtree(self.tempDir)
-		#os.makedirs(self.tempDir)
-		self.tempDir = tempfile.mkdtemp()
+		if self.debug:
+			self.tempDir = os.path.abspath('temp')
+			if os.path.isdir(self.tempDir):
+				shutil.rmtree(self.tempDir)
+			os.makedirs(self.tempDir)
+		else:
+			self.tempDir = tempfile.mkdtemp()
 		return self.tempDir
 
 	def __exit__(self, type, value, traceback):
-		if not self.keepIntermediateFiles:
+		if not self.debug:
 			shutil.rmtree(self.tempDir)
 		#pass
 
@@ -97,7 +99,7 @@ if __name__ == '__main__':
 	parser.add_argument('--outBioc',required=True,type=str,help='Output BioC XML file')
 	parser.add_argument('--mem',type=int,default=10,help='GB of RAM to use for Java')
 	parser.add_argument('--maxLength',type=int,default=1000000,help='Max size (in characters) of documents to put in a single file for processing')
-	parser.add_argument('--keepFiles', action='store_true',help='Whether to keep the temporary files')
+	parser.add_argument('--debug', action='store_true',help='Whether to use the "temp" directory and not delete intermediate files')
 	args = parser.parse_args()
 
 	tool = args.tool.lower()
@@ -121,7 +123,7 @@ if __name__ == '__main__':
 
 
 
-	with TempDir(args.keepFiles) as tempDir:
+	with TempDir(args.debug) as tempDir:
 
 		#if tool == 'gnormplus' or tool == 'tmvar':
 		inputDir = os.path.join(tempDir,'input')
