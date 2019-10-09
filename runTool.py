@@ -42,8 +42,8 @@ def splitBioc(inBioc,outDir,maxLength,stripAnnotations=False):
 	textLength = 0
 	docNumber = 0
 	docName = os.path.join(outDir,"%08d.bioc.xml" % docNumber)
-	writer = bioc.iterwrite(docName)
-	with bioc.iterparse(inBioc) as parser:
+	writer = bioc.BioCXMLDocumentWriter(docName)
+	with bioc.BioCXMLDocumentReader(inBioc) as parser:
 		for i,doc in enumerate(parser):
 			if 'pmid' in doc.infons:
 				if doc.infons['pmid'] in pmids:
@@ -64,11 +64,11 @@ def splitBioc(inBioc,outDir,maxLength,stripAnnotations=False):
 				docNumber += 1
 				docName = os.path.join(outDir,"%08d.bioc.xml" % docNumber)
 				writer.close()
-				writer = bioc.iterwrite(docName)
+				writer = bioc.BioCXMLDocumentWriter(docName)
 
 			textLength += thisDocLength
 
-			writer.writedocument(doc)
+			writer.write_document(doc)
 
 	writer.close()
 	if textLength == 0:
@@ -86,11 +86,11 @@ def symlinkDirectoryContents(fromDir,toDir,skipTmp=False):
 def mergeBioc(inDir,outBioc):
 	inBiocs = sorted( [ os.path.join(inDir,filename) for filename in os.listdir(inDir) if filename.lower().endswith('.xml') and not filename.lower().endswith('.ga.xml') ] )
 
-	with bioc.iterwrite(outBioc) as writer:
+	with bioc.BioCXMLDocumentWriter(outBioc) as writer:
 		for inBioc in inBiocs:
-			with bioc.iterparse(inBioc) as parser:
+			with bioc.BioCXMLDocumentReader(inBioc) as parser:
 				for doc in parser:
-					writer.writedocument(doc)
+					writer.write_document(doc)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Run an NER tool on a BioC XML file')
