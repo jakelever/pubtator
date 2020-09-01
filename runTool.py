@@ -43,7 +43,8 @@ def splitBioc(inBioc,outDir,maxLength,stripAnnotations=False):
 	docNumber = 0
 	docName = os.path.join(outDir,"%08d.bioc.xml" % docNumber)
 	writer = bioc.BioCXMLDocumentWriter(docName)
-	with bioc.BioCXMLDocumentReader(inBioc) as parser:
+	with open(inBioc,'rb') as f:
+		parser = bioc.BioCXMLDocumentReader(f)
 		for i,doc in enumerate(parser):
 			if 'pmid' in doc.infons:
 				if doc.infons['pmid'] in pmids:
@@ -82,13 +83,34 @@ def symlinkDirectoryContents(fromDir,toDir,skipTmp=False):
 		os.symlink(os.path.join(fromDir,f),os.path.join(toDir,f))
 
 
+def mergeBiocWithMetadata(metaDir,inDir,outBioc):
+	filenames = sorted( [ filename for filename in os.listdir(inDir) if filename.lower().endswith('.xml') and not filename.lower().endswith('.ga.xml') ] )
+
+	with bioc.BioCXMLDocumentWriter(outBioc) as writer:
+		for filename in filenames:
+			inBioc = os.path.join(inDir,filename)
+			metaBioc = os.path.join(metaDir,filename)
+
+			with open(inBioc,'rb') as f1, open(metaBioc,'rb') as f2:
+				inParser = bioc.BioCXMLDocumentReader(f1)
+				metaParser = bioc.BioCXMLDocumentReader(f2)
+
+				for inDoc,metaDoc in zip(inParser,metaParser):
+					assert len(inDoc.passages) == len(metaDoc.passages)
+					for inP,metaP in zip(inDoc.passages, metaDoc.passages):
+						assert inP.text == metaP.text
+						inP.infons.update(metaP.infons)
+
+					inDoc.infons.update(metaDoc.infons)
+					writer.write_document(inDoc)
 
 def mergeBioc(inDir,outBioc):
 	inBiocs = sorted( [ os.path.join(inDir,filename) for filename in os.listdir(inDir) if filename.lower().endswith('.xml') and not filename.lower().endswith('.ga.xml') ] )
 
 	with bioc.BioCXMLDocumentWriter(outBioc) as writer:
 		for inBioc in inBiocs:
-			with bioc.BioCXMLDocumentReader(inBioc) as parser:
+			with open(inBioc,'rb') as f:
+				parser = bioc.BioCXMLDocumentReader(f)
 				for doc in parser:
 					writer.write_document(doc)
 
@@ -182,7 +204,7 @@ if __name__ == '__main__':
 					pass
 					#os.remove(os.path.join(outputDir,f))
 
-		mergeBioc(outputDir,outBioc)
+		mergeBiocWithMetadata(inputDir,outputDir,outBioc)
 
 
 

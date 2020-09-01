@@ -11,7 +11,8 @@ if __name__ == '__main__':
 
 	textLength = 0
 
-	with bioc.iterparse(args.inBiocXML) as parser, bioc.iterwrite(args.outBiocXML) as writer:
+	with open(args.inBiocXML,'rb') as f, bioc.BioCXMLDocumentWriter(args.outBiocXML) as writer:
+		parser = bioc.BioCXMLDocumentReader(f)
 		for i,doc in enumerate(parser):
 			if doc.infons['pmid'] in pmids:
 				continue
@@ -32,7 +33,7 @@ if __name__ == '__main__':
 
 			textLength += thisDocLength
 			
-			writer.writedocument(doc)
+			writer.write_document(doc)
 
 	print("textLength = %d" % textLength)
 
