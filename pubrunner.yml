@@ -28,6 +28,7 @@ run:
     - python fixBioc.py --inBiocXML {IN:PUBMED/%} --outBiocXML {OUT:fixed/%.xml}
     - python fixBioc.py --inBiocXML {IN:PMCOA/%} --outBiocXML {OUT:fixed/%.xml}
     - python fixBioc.py --inBiocXML {IN:PMCAMC/%} --outBiocXML {OUT:fixed/%.xml}
-    - python runTool.py --tool GNormPlus_perl --inBioc {IN:fixed/%} --outBioc {OUT:GNormPlus/%}
+#    - python splitBioc.py --inBioc {IN:fixed/%} --outDir {OUT:split/} --maxLength 10000000
+    - python runTool.py --tool GNormPlus_java --inBioc {IN:fixed/%} --outBioc {OUT:GNormPlus/%} --mem 2 --maxLength 100000
     - python runTool.py --tool tmVar --inBioc {IN:GNormPlus/%} --outBioc {OUT:GNormPlusAndTmVar/%} --mem 3 --maxLength 100000
 
