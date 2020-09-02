@@ -7,6 +7,7 @@ import random
 import string
 import subprocess
 import bioc
+import re
 
 class TempDir:
 	def __init__(self,debug=False):
@@ -203,6 +204,11 @@ if __name__ == '__main__':
 				if f.endswith('ga.xml'):
 					pass
 					#os.remove(os.path.join(outputDir,f))
+		elif tool == 'tmvar':
+			for f in os.listdir(outputDir):
+				if f.endswith('.xml.BioC.XML'):
+					newFilename = re.sub(r'\.xml\.BioC\.XML$','.xml',f)
+					os.rename(os.path.join(outputDir,f), os.path.join(outputDir,newFilename))
 
 		mergeBiocWithMetadata(inputDir,outputDir,outBioc)
 
